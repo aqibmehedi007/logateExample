@@ -11,9 +11,11 @@ class _AddressSearchScreenState extends State<AddressSearchScreen> {
   List<Map<String, String>> _suggestions = [];
   TextEditingController _controller = TextEditingController();
 
-  // Controllers for each address field
+  // Additional controllers
+  TextEditingController _unitOrFlatNoController = TextEditingController();
   TextEditingController _streetNumberController = TextEditingController();
   TextEditingController _streetNameController = TextEditingController();
+  TextEditingController _suburbController = TextEditingController();
   TextEditingController _cityController = TextEditingController();
   TextEditingController _stateController = TextEditingController();
   TextEditingController _postalCodeController = TextEditingController();
@@ -32,21 +34,21 @@ class _AddressSearchScreenState extends State<AddressSearchScreen> {
   }
 
   void _selectAddress(Map<String, String> selectedSuggestion) async {
-    final details = await _loqateService.getAddressDetails(selectedSuggestion['Id']!);
+    final id = selectedSuggestion['Id']!;
+    final details = await _loqateService.getAddressDetails(id);
 
     setState(() {
+      // Update controllers with the address details
+      _unitOrFlatNoController.text = details['unitOrFlatNo'] ?? '';
       _streetNumberController.text = details['streetNumber'] ?? '';
-      _streetNameController.text = details['streetName'] ?? '';
+      _streetNameController.text = '${details['streetName'] ?? ''}, ${details['suburb'] ?? ''}';
       _cityController.text = details['city'] ?? '';
       _stateController.text = details['state'] ?? '';
       _postalCodeController.text = details['postalCode'] ?? '';
       _suggestions = [];
       _controller.text = '${selectedSuggestion['Text']}, ${selectedSuggestion['Description']}';
     });
-
-    print("Selected Address Details: $details"); // Debug line to check details
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -65,23 +67,27 @@ class _AddressSearchScreenState extends State<AddressSearchScreen> {
               child: ListView.builder(
                 itemCount: _suggestions.length,
                 itemBuilder: (context, index) {
+                  final suggestion = _suggestions[index];
                   return ListTile(
-                    title: Text('${_suggestions[index]['Text']}, ${_suggestions[index]['Description']}'),
+                    title: Text('${suggestion['Text']}, ${suggestion['Description']}'),
                     onTap: () {
-                      _selectAddress(_suggestions[index]);
+                      _selectAddress(suggestion);
                     },
                   );
                 },
               ),
             ),
-            // Additional address fields
+            TextField(
+              controller: _unitOrFlatNoController,
+              decoration: InputDecoration(labelText: 'Unit or Flat No'),
+            ),
             TextField(
               controller: _streetNumberController,
               decoration: InputDecoration(labelText: 'Street Number'),
             ),
             TextField(
               controller: _streetNameController,
-              decoration: InputDecoration(labelText: 'Street Name'),
+              decoration: InputDecoration(labelText: 'Street Name/Suburb'),
             ),
             TextField(
               controller: _cityController,

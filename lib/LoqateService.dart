@@ -27,12 +27,8 @@ class LoqateService {
     throw Exception('Failed to load address suggestions');
   }
 
-
-
   // Method to get detailed address information based on the selected Id
   Future<Map<String, String>> getAddressDetails(String id) async {
-
-    print(">>>>>>>>>>>>>>>>>>> ${id}");
     final String url =
         'https://api.addressy.com/Capture/Interactive/Retrieve/v1.20/json3.ws?Key=$apiKey&Id=$id';
 
@@ -40,14 +36,16 @@ class LoqateService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print("Detailed API Response: $data"); // Debug line
+      print("Detailed API Response: $data");
 
       if (data['Items'] != null && data['Items'].isNotEmpty) {
         final item = data['Items'][0];
 
         return {
+          'unitOrFlatNo': item['SubBuilding'] ?? '', // Assuming SubBuilding contains unit/flat info
           'streetNumber': item['BuildingNumber'] ?? '',
           'streetName': item['Street'] ?? '',
+          'suburb': item['Neighbourhood'] ?? item['District'] ?? '', // Using Neighbourhood or District for suburb
           'city': item['City'] ?? '',
           'state': item['Province'] ?? '',
           'postalCode': item['PostalCode'] ?? '',
@@ -56,5 +54,4 @@ class LoqateService {
     }
     throw Exception('Failed to load address details');
   }
-
 }
