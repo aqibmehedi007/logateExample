@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'LoqateService.dart';
-
 
 class AddressSearchScreen extends StatefulWidget {
   @override
@@ -10,7 +8,7 @@ class AddressSearchScreen extends StatefulWidget {
 
 class _AddressSearchScreenState extends State<AddressSearchScreen> {
   final LoqateService _loqateService = LoqateService();
-  List<String> _suggestions = [];
+  List<Map<String, String>> _suggestions = [];
   TextEditingController _controller = TextEditingController();
 
   // Controllers for each address field
@@ -33,21 +31,22 @@ class _AddressSearchScreenState extends State<AddressSearchScreen> {
     }
   }
 
-  void _selectAddress(String address) async {
-    // Fetch detailed address information
-    final details = await _loqateService.getAddressDetails(address);
+  void _selectAddress(Map<String, String> selectedSuggestion) async {
+    final details = await _loqateService.getAddressDetails(selectedSuggestion['Id']!);
 
     setState(() {
-      // Update controllers with selected address details
       _streetNumberController.text = details['streetNumber'] ?? '';
       _streetNameController.text = details['streetName'] ?? '';
       _cityController.text = details['city'] ?? '';
       _stateController.text = details['state'] ?? '';
       _postalCodeController.text = details['postalCode'] ?? '';
-      _suggestions = []; // Clear suggestions after selection
-      _controller.text = address; // Update the main search field
+      _suggestions = [];
+      _controller.text = '${selectedSuggestion['Text']}, ${selectedSuggestion['Description']}';
     });
+
+    print("Selected Address Details: $details"); // Debug line to check details
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +66,7 @@ class _AddressSearchScreenState extends State<AddressSearchScreen> {
                 itemCount: _suggestions.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_suggestions[index]),
+                    title: Text('${_suggestions[index]['Text']}, ${_suggestions[index]['Description']}'),
                     onTap: () {
                       _selectAddress(_suggestions[index]);
                     },

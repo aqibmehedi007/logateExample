@@ -1,13 +1,12 @@
-// loqate_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logate_example/ConstantValues.dart';
 
 class LoqateService {
-  final String apiKey = Constants.apiSecretKey; // Replace with your actual API key
+  final String apiKey = Constants.apiSecretKey;
 
   // Method to search for address suggestions in Australia
-  Future<List<String>> searchAddress(String query) async {
+  Future<List<Map<String, String>>> searchAddress(String query) async {
     final String url =
         'https://api.addressy.com/Capture/Interactive/Find/v1.10/json3.ws?Key=$apiKey&Text=$query&IsMiddleware=false&Language=en-gb&Limit=10&Countries=AU';
 
@@ -17,53 +16,45 @@ class LoqateService {
       final data = json.decode(response.body);
 
       if (data['Items'] != null) {
-        // Combine 'Text' and 'Description' for a complete suggestion
-        return data['Items']
-            .where((item) => item['Text'] != null && item['Description'] != null)
-            .map<String>((item) => '${item['Text']}, ${item['Description']}')
-            .toList();
-      } else {
-        return [];
+        return List<Map<String, String>>.from(data['Items'].map((item) => {
+          'Text': item['Text'] as String,
+          'Description': item['Description'] as String,
+          'Id': item['Id'] as String,
+          'Type': item['Type'] as String, // Include the type here
+        }));
       }
-    } else {
-      throw Exception('Failed to load address suggestions');
     }
+    throw Exception('Failed to load address suggestions');
   }
 
-  // Method to get detailed address information based on the selected address
-  Future<Map<String, String>> getAddressDetails(String query) async {
+
+
+  // Method to get detailed address information based on the selected Id
+  Future<Map<String, String>> getAddressDetails(String id) async {
+
+    print(">>>>>>>>>>>>>>>>>>> ${id}");
     final String url =
-        'https://api.addressy.com/Capture/Interactive/Find/v1.10/json3.ws?Key=$apiKey&Text=$query&IsMiddleware=false&Language=en-gb&Limit=1&Countries=AU';
+        'https://api.addressy.com/Capture/Interactive/Retrieve/v1.20/json3.ws?Key=$apiKey&Id=$id';
 
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print('API Response: $data');
+      print("Detailed API Response: $data"); // Debug line
 
       if (data['Items'] != null && data['Items'].isNotEmpty) {
         final item = data['Items'][0];
 
-        // Extract full address and description
-        final fullAddress = item['Text'] ?? '';
-        final description = item['Description'] ?? '';
-
-        // Example parsing logic (modify based on real data patterns)
-        final streetNumber = fullAddress.split(' ').first;
-        final streetName = fullAddress.substring(streetNumber.length).trim().split(',').first;
-        final city = description.split(' ').first; // Use this if city is reliably first in description
-        final postalCode = description.split(' ').last; // Use if postal code is reliably last
-
         return {
-          'streetNumber': streetNumber,
-          'streetName': streetName,
-          'city': city,
-          'state': '', // Not provided in current response
-          'postalCode': postalCode,
+          'streetNumber': item['BuildingNumber'] ?? '',
+          'streetName': item['Street'] ?? '',
+          'city': item['City'] ?? '',
+          'state': item['Province'] ?? '',
+          'postalCode': item['PostalCode'] ?? '',
         };
       }
     }
     throw Exception('Failed to load address details');
   }
-}
 
+}
